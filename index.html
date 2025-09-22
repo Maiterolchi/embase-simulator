@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Embase Quest - Simulador de Búsqueda Bibliográfica</title>
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --secondary: #3498db;
+            --success: #27ae60;
+            --warning: #f39c12;
+            --danger: #e74c3c;
+            --light: #ecf0f1;
+            --dark: #34495e;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 2rem 0;
+            text-align: center;
+            border-radius: 10px;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+        
+        .scenario {
+            background-color: white;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            border-left: 5px solid var(--secondary);
+        }
+        
+        .scenario h2 {
+            color: var(--primary);
+            margin-bottom: 1rem;
+        }
+        
+        .step {
+            background-color: white;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            display: none;
+        }
+        
+        .step.active {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .step-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--light);
+        }
+        
+        .step-title {
+            color: var(--primary);
+            font-size: 1.5rem;
+        }
+        
+        .step-number {
+            background-color: var(--secondary);
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+        
+        .options-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 15px;
+            margin-bottom: 1.5rem;
+        }
+        
+        .option {
+            background-color: var(--light);
+            border: 2px solid #bdc3c7;
+            border-radius: 8px;
+            padding: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .option:hover {
+            background-color: #d6dbdf;
+            transform: translateY(-2px);
+        }
+        
+        .option.selected {
+            border-color: var(--success);
+            background-color: #d5f4e6;
+        }
+        
+        .option.incorrect {
+            border-color: var(--danger);
+            background-color: #fadbd8;
+        }
+        
+        .feedback {
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 1rem;
+            display: none;
+        }
+        
+        .feedback.correct {
+            background-color: #d5f4e6;
+            border-left: 5px solid var(--success);
+            display: block;
+        }
+        
+        .feedback.incorrect {
+            background-color: #fadbd8;
+            border-left: 5px solid var(--danger);
+            display: block;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary {
+            background-color: var(--secondary);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background-color: #2980b9;
+        }
+        
+        .btn-success {
+            background-color: var(--success);
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background-color: #219653;
+        }
+        
+        .btn-warning {
+            background-color: var(--warning);
+            color: white;
+        }
+        
+        .btn-warning:hover {
+            background-color: #e67e22;
+        }
+        
+        .navigation {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 2rem;
+        }
+        
+        .search-preview {
+            background-color: #2c3e50;
+            color: #ecf0f1;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: monospace;
+            margin-top: 1rem;
+            white-space: pre-wrap;
+            display: none;
+        }
+        
+        .filters-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 1rem;
+        }
+        
+        .filter {
+            background-color: var(--light);
+            border: 1px solid #bdc3c7;
+            border-radius: 20px;
+            padding: 8px 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .filter.active {
+            background-color: var(--secondary);
+            color: white;
+            border-color: var(--secondary);
+        }
+        
+        .results {
+            background-color: white;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-top: 2rem;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            display: none;
+        }
+        
+        .score {
+            text-align: center;
+            font-size: 1.5rem;
+            margin: 1rem 0;
+            font-weight: bold;
+            color: var(--primary);
+        }
+        
+        .progress-bar {
+            height: 10px;
+            background-color: #ecf0f1;
+            border-radius: 5px;
+            margin: 1rem 0;
+            overflow: hidden;
+        }
+        
+        .progress {
+            height: 100%;
+            background-color: var(--success);
+            width: 0%;
+            transition: width 0.5s ease;
+        }
+        
+        @media (max-width: 768px) {
+            .options-container {
+                grid-template-columns: 1fr;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Embase Quest</h1>
+            <p class="subtitle">Simulador de Búsqueda Bibliográfica</p>
+        </header>
+        
+        <section class="scenario">
+            <h2>Caso Clínico</h2>
+            <p>Eres un investigador que quiere evaluar la <strong>efectividad y seguridad de los nuevos anticoagulantes orales (como el apixabán o el rivaroxabán) en comparación con la warfarina</strong> para prevenir accidentes cerebrovasculares (ictus) en pacientes con fibrilación auricular no valvular. Tu revisión se centrará en estudios de los últimos 10 años.</p>
+            <p><strong>Tu Tarea:</strong> Construir una estrategia de búsqueda en Embase para encontrar los artículos más relevantes.</p>
+            <button id="start-btn" class="btn btn-primary">Comenzar Simulación</button>
+        </section>
+        
+        <div class="progress-bar">
+            <div class="progress" id="progress"></div>
+        </div>
+        
+        <!-- Paso 1: Identificación de Conceptos Clave -->
+        <section id="step1" class="step">
+            <div class="step-header">
+                <h2 class="step-title">Paso 1: Identifica los Conceptos Clave</h2>
+                <div class="step-number">1</div>
+            </div>
+            <p>Selecciona los 3-4 conceptos clave de la pregunta de investigación:</p>
+            <div class="options-container" id="concept-options">
+                <!-- Las opciones se generarán con JavaScript -->
+            </div>
+            <div class="feedback" id="step1-feedback"></div>
+            <div class="navigation">
+                <button class="btn btn-warning" id="back-step1" style="visibility: hidden;">Atrás</button>
+                <button class="btn btn-primary" id="next-step1">Siguiente</button>
+            </div>
+        </section>
+        
+        <!-- Paso 2: Elección de Términos EMTREE -->
+        <section id="step2" class="step">
+            <div class="step-header">
+                <h2 class="step-title">Paso 2: Elige los Términos EMTREE Correctos</h2>
+                <div class="step-number">2</div>
+            </div>
+            <div id="term-questions">
+                <!-- Las preguntas se generarán con JavaScript -->
+            </div>
+            <div class="navigation">
+                <button class="btn btn-warning" id="back-step2">Atrás</button>
+                <button class="btn btn-primary" id="next-step2">Siguiente</button>
+            </div>
+        </section>
+        
+        <!-- Paso 3: Construcción de la Estrategia -->
+        <section id="step3" class="step">
+            <div class="step-header">
+                <h2 class="step-title">Paso 3: Construye tu Estrategia de Búsqueda</h2>
+                <div class="step-number">3</div>
+            </div>
+            <p>Arrastra los bloques para construir tu estrategia utilizando los operadores booleanos correctos:</p>
+            <div id="search-builder">
+                <!-- El constructor de búsqueda se generará con JavaScript -->
+            </div>
+            <div class="search-preview" id="search-preview"></div>
+            <div class="feedback" id="step3-feedback"></div>
+            <div class="navigation">
+                <button class="btn btn-warning" id="back-step3">Atrás</button>
+                <button class="btn btn-primary" id="next-step3">Verificar Estrategia</button>
+            </div>
+        </section>
+        
+        <!-- Paso 4: Aplicación de Filtros -->
+        <section id="step4" class="step">
+            <div class="step-header">
+                <h2 class="step-title">Paso 4: Aplica Filtros y Límites</h2>
+                <div class="step-number">4</div>
+            </div>
+            <p>Selecciona los filtros apropiados para refinar tu búsqueda:</p>
+            <div class="filters-container" id="filters-container">
+                <!-- Los filtros se generarán con JavaScript -->
+            </div>
+            <div class="feedback" id="step4-feedback"></div>
+            <div class="navigation">
+                <button class="btn btn-warning" id="back-step4">Atrás</button>
+                <button class="btn btn-primary" id="next-step4">Siguiente</button>
+            </div>
+        </section>
+        
+        <!-- Paso 5: Resultados Finales -->
+        <section id="step5" class="step">
+            <div class="step-header">
+                <h2 class="step-title">Paso 5: Tu Estrategia de Búsqueda Final</h2>
+                <div class="step-number">5</div>
+            </div>
+            <div class="score" id="final-score"></div>
+            <div class="search-preview" id="final-search"></div>
+            <div class="feedback correct" id="final-feedback"></div>
+            <div class="navigation">
+                <button class="btn btn-warning" id="back-step5">Atrás</button>
+                <button class="btn btn-success" id="restart-btn">Reiniciar Simulación</button>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        // Datos de la simulación
+        const simulationData = {
+            step1: {
+                question: "Selecciona los 3-4 conceptos clave de la pregunta de investigación:",
+                options: [
+                    { text: "Fibrilación Auricular", correct: true },
+                    { text: "Anticoagulantes orales", correct: true },
+                    { text: "Warfarina", correct: true },
+                    { text: "Accidente Cerebrovascular (Ictus)", correct: true },
+                    { text: "Apixabán", correct: false },
+                    { text: "Rivaroxabán", correct: false },
+                    { text: "Seguridad de los medicamentos", correct: false },
+                    { text: "Efectividad", correct: false }
+                ],
+                correctFeedback: "¡Perfecto! Has identificado los conceptos principales: 1) Pacientes con Fibrilación Auricular, 2) Anticoagulantes Orales (específicamente los nuevos), 3) Warfarina (comparador), y 4) Prevención del Ictus. Ahora, traduciremos estos conceptos al lenguaje de Embase (Descriptores EMTREE).",
+                incorrectFeedback: "Revisa tu selección. 'Seguridad de los medicamentos' y 'Efectividad' son conceptos de resultado muy amplios. Es mejor centrarse primero en la población, la intervención y el comparador."
+            },
+            step2: {
+                questions: [
+                    {
+                        concept: "Fibrilación Auricular",
+                        options: [
+                            { text: "atrial fibrillation (Término de texto libre)", correct: false },
+                            { text: "'nonvalvular atrial fibrillation'/exp (Descriptor EMTREE)", correct: true },
+                            { text: "afib (Abreviatura)", correct: false }
+                        ],
+                        correctFeedback: "¡Correcto! Usar el descriptor EMTREE '/exp' asegura que se incluyan todos los estudios indexados con este término y sus términos más específicos (subordinados). Es la forma más poderosa de buscar en Embase.",
+                        incorrectFeedback: "Casi. Los términos de texto libre son útiles para términos nuevos o jerga, pero pueden perderse sinónimos. Las abreviaturas son poco fiables. El descriptor EMTREE es la opción más robusta."
+                    },
+                    {
+                        concept: "Anticoagulantes Orales (Nuevos)",
+                        options: [
+                            { text: "'factor xa inhibitor'/exp", correct: false },
+                            { text: "'direct thrombin inhibitor'/exp", correct: false },
+                            { text: "'novel oral anticoagulant' (Término de texto libre)", correct: false },
+                            { text: "'dabigatran'/exp OR 'rivaroxaban'/exp OR 'apixaban'/exp", correct: true }
+                        ],
+                        correctFeedback: "Excelente estrategia. Como no hay un único descriptor EMTREE para 'nuevos anticoagulantes orales' (NOACs), la mejor práctica es combinar los descriptores de los fármacos específicos con el operador OR.",
+                        incorrectFeedback: "Es un buen punto de partida, pero te estarías perdiendo algunos fármacos. La opción con los fármacos específicos combinados con OR es más completa."
+                    }
+                ]
+            },
+            step3: {
+                correctStrategy: "(A) AND (B OR C) AND (D)",
+                correctFeedback: "¡Eso es! Has creado una estrategia sólida. Buscas pacientes con fibrilación auricular (A) Y que reciban cualquiera de los nuevos anticoagulantes O warfarina (B OR C) Y el resultado sea ictus (D). La base de datos encontrará estudios que cumplan con las tres condiciones simultáneamente.",
+                incorrectFeedback: "Cuidado con este uso de OR. Esta búsqueda encontraría estudios sobre (fibrilación auricular y nuevos anticoagulantes) O (warfarina e ictus), lo que incluiría estudios sobre warfarina e ictus en pacientes sin fibrilación auricular, dando muchos resultados irrelevantes."
+            },
+            step4: {
+                filters: [
+                    { text: "Últimos 10 años", correct: true },
+                    { text: "Ensayos Clínicos Controlados", correct: true },
+                    { text: "Solo inglés", correct: true },
+                    { text: "Adultos (18-64 años)", correct: true },
+                    { text: "Ancianos (65+ años)", correct: true },
+                    { text: "Excluir Estudios en Animales", correct: true },
+                    { text: "Solo resúmenes", correct: false },
+                    { text: "Estudios en niños", correct: false }
+                ],
+                correctFeedback: "Bien. Los filtros de fecha y tipo de estudio son muy relevantes para este caso. El filtro de idioma es común, pero ten en cuenta que podrías perder algunos estudios relevantes. Los filtros de edad son adecuados para la población diana.",
+                incorrectFeedback: "Revisa tus filtros. Algunos pueden estar excluyendo estudios relevantes o incluyendo estudios que no se ajustan a tu pregunta de investigación."
+            }
+        };
+
+        // Estado de la simulación
+        let currentStep = 0;
+        let userScore = 0;
+        let maxScore = 10;
+        const userSelections = {
+            step1: [],
+            step2: [],
+            step3: "",
+            step4: []
+        };
+
+        // Inicialización
+        document.addEventListener('DOMContentLoaded', function() {
+            // Configurar botones de navegación
+            document.getElementById('start-btn').addEventListener('click', startSimulation);
+            document.getElementById('next-step1').addEventListener('click', () => navigateToStep(2));
+            document.getElementById('next-step2').addEventListener('click', () => navigateToStep(3));
+            document.getElementById('next-step3').addEventListener('click', verifyStrategy);
+            document.getElementById('next-step4').addEventListener('click', () => navigateToStep(5));
+            
+            document.getElementById('back-step2').addEventListener('click', () => navigateToStep(1));
+            document.getElementById('back-step3').addEventListener('click', () => navigateToStep(2));
+            document.getElementById('back-step4').addEventListener('click', () => navigateToStep(3));
+            document.getElementById('back-step5').addEventListener('click', () => navigateToStep(4));
+            
+            document.getElementById('restart-btn').addEventListener('click', restartSimulation);
+            
+            // Inicializar el paso 1
+            initializeStep1();
+        });
+
+        function startSimulation() {
+            currentStep = 1;
+            updateProgress();
+            document.getElementById('step1').classList.add('active');
+            document.querySelector('.scenario').style.display = 'none';
+            document.querySelector('.progress-bar').style.display = 'block';
+        }
+
+        function navigateToStep(step) {
+            // Ocultar todos los pasos
+            document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+            
+            // Mostrar el paso actual
+            document.getElementById(`step${step}`).classList.add('active');
+            currentStep = step;
+            updateProgress();
+            
+            // Inicializar el paso si es necesario
+            if (step === 2 && userSelections.step2.length === 0) {
+                initializeStep2();
+            } else if (step === 3 && !userSelections.step3) {
+                initializeStep3();
+            } else if (step === 4 && userSelections.step4.length === 0) {
+                initializeStep4();
+            } else if (step === 5) {
+                showFinalResults();
+            }
+        }
+
+        function updateProgress() {
+            const progress = (currentStep / 5) * 100;
+            document.getElementById('progress').style.width = `${progress}%`;
+        }
+
+        function initializeStep1() {
+            const optionsContainer = document.getElementById('concept-options');
+            optionsContainer.innerHTML = '';
+            
+            simulationData.step1.options.forEach((option, index) => {
+                const optionElement = document.createElement('div');
+                optionElement.className = 'option';
+                optionElement.textContent = option.text;
+                optionElement.dataset.index = index;
+                optionElement.dataset.correct = option.correct;
+                
+                optionElement.addEventListener('click', function() {
+                    // Permitir selección múltiple
+                    if (this.classList.contains('selected')) {
+                        this.classList.remove('selected');
+                        const index = userSelections.step1.indexOf(option.text);
+                        if (index > -1) {
+                            userSelections.step1.splice(index, 1);
+                        }
+                    } else {
+                        this.classList.add('selected');
+                        userSelections.step1.push(option.text);
+                    }
+                    
+                    // Verificar si la selección es correcta
+                    verifyStep1();
+                });
+                
+                optionsContainer.appendChild(optionElement);
+            });
+        }
+
+        function verifyStep1() {
+            const feedback = document.getElementById('step1-feedback');
+            const correctOptions = simulationData.step1.options.filter(opt => opt.correct).map(opt => opt.text);
+            const userCorrect = userSelections.step1.filter(opt => correctOptions.includes(opt));
+            
+            if (userCorrect.length === correctOptions.length && userSelections.step1.length === correctOptions.length) {
+                feedback.textContent = simulationData.step1.correctFeedback;
+                feedback.className = 'feedback correct';
+                userScore += 2; // Puntos por el paso 1
+            } else if (userSelections.step1.length > 0) {
+                feedback.textContent = simulationData.step1.incorrectFeedback;
+                feedback.className = 'feedback incorrect';
+            } else {
+                feedback.className = 'feedback';
+            }
+        }
+
+        function initializeStep2() {
+            const questionsContainer = document.getElementById('term-questions');
+            questionsContainer.innerHTML = '';
+            
+            simulationData.step2.questions.forEach((question, qIndex) => {
+                const questionElement = document.createElement('div');
+                questionElement.className = 'question';
+                questionElement.innerHTML = `<h3>Concepto: ${question.concept}</h3>`;
+                
+                const optionsContainer = document.createElement('div');
+                optionsContainer.className = 'options-container';
+                
+                question.options.forEach((option, oIndex) => {
+                    const optionElement = document.createElement('div');
+                    optionElement.className = 'option';
+                    optionElement.textContent = option.text;
+                    optionElement.dataset.qIndex = qIndex;
+                    optionElement.dataset.oIndex = oIndex;
+                    optionElement.dataset.correct = option.correct;
+                    
+                    optionElement.addEventListener('click', function() {
+                        // Solo permitir una selección por pregunta
+                        const options = this.parentElement.querySelectorAll('.option');
+                        options.forEach(opt => opt.classList.remove('selected', 'incorrect'));
+                        
+                        this.classList.add('selected');
+                        userSelections.step2[qIndex] = oIndex;
+                        
+                        // Verificar si la selección es correcta
+                        if (option.correct) {
+                            this.classList.add('selected');
+                        } else {
+                            this.classList.add('incorrect');
+                        }
+                        
+                        // Mostrar feedback
+                        const feedback = document.createElement('div');
+                        feedback.className = option.correct ? 'feedback correct' : 'feedback incorrect';
+                        feedback.textContent = option.correct ? question.correctFeedback : question.incorrectFeedback;
+                        
+                        // Eliminar feedback anterior si existe
+                        const existingFeedback = this.parentElement.nextElementSibling;
+                        if (existingFeedback && existingFeedback.classList.contains('feedback')) {
+                            existingFeedback.remove();
+                        }
+                        
+                        this.parentElement.after(feedback);
+                    });
+                    
+                    optionsContainer.appendChild(optionElement);
+                });
+                
+                questionElement.appendChild(optionsContainer);
+                questionsContainer.appendChild(questionElement);
+            });
+        }
+
+        function initializeStep3() {
+            const builderContainer = document.getElementById('search-builder');
+            builderContainer.innerHTML = `
+                <div class="options-container">
+                    <div class="option draggable" draggable="true" data-block="A">'nonvalvular atrial fibrillation'/exp</div>
+                    <div class="option draggable" draggable="true" data-block="B">'dabigatran'/exp OR 'rivaroxaban'/exp OR 'apixaban'/exp</div>
+                    <div class="option draggable" draggable="true" data-block="C">'warfarin'/exp</div>
+                    <div class="option draggable" draggable="true" data-block="D">'cerebrovascular accident'/exp OR 'stroke'/exp</div>
+                    <div class="option draggable" draggable="true" data-operator="AND">AND</div>
+                    <div class="option draggable" draggable="true" data-operator="OR">OR</div>
+                    <div class="option draggable" draggable="true" data-operator="(">(</div>
+                    <div class="option draggable" draggable="true" data-operator=")">)</div>
+                </div>
+                <div style="margin-top: 20px; min-height: 100px; border: 2px dashed #bdc3c7; border-radius: 8px; padding: 15px;" id="strategy-area">
+                    <p>Arrastra los bloques aquí para construir tu estrategia...</p>
+                </div>
+            `;
+            
+            // Configurar funcionalidad de arrastrar y soltar
+            const draggables = document.querySelectorAll('.draggable');
+            const strategyArea = document.getElementById('strategy-area');
+            
+            draggables.forEach(draggable => {
+                draggable.addEventListener('dragstart', function(e) {
+                    e.dataTransfer.setData('text/plain', this.textContent);
+                    this.classList.add('dragging');
+                });
+                
+                draggable.addEventListener('dragend', function() {
+                    this.classList.remove('dragging');
+                });
+            });
+            
+            strategyArea.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                this.classList.add('drag-over');
+            });
+            
+            strategyArea.addEventListener('dragleave', function() {
+                this.classList.remove('drag-over');
+            });
+            
+            strategyArea.addEventListener('drop', function(e) {
+                e.preventDefault();
+                this.classList.remove('drag-over');
+                
+                const data = e.dataTransfer.getData('text/plain');
+                const newBlock = document.createElement('span');
+                newBlock.className = 'strategy-block';
+                newBlock.textContent = data;
+                newBlock.draggable = true;
+                
+                newBlock.addEventListener('dragstart', function(ev) {
+                    ev.dataTransfer.setData('text/plain', this.textContent);
+                });
+                
+                newBlock.addEventListener('dblclick', function() {
+                    this.remove();
+                    updateSearchPreview();
+                });
+                
+                this.appendChild(newBlock);
+                updateSearchPreview();
+            });
+            
+            // Mostrar vista previa de la búsqueda
+            document.getElementById('search-preview').style.display = 'block';
+        }
+
+        function updateSearchPreview() {
+            const strategyArea = document.getElementById('strategy-area');
+            const blocks = strategyArea.querySelectorAll('.strategy-block');
+            let strategy = '';
+            
+            blocks.forEach(block => {
+                strategy += block.textContent + ' ';
+            });
+            
+            document.getElementById('search-preview').textContent = strategy.trim();
+            userSelections.step3 = strategy.trim();
+        }
+
+        function verifyStrategy() {
+            const feedback = document.getElementById('step3-feedback');
+            const userStrategy = userSelections.step3.replace(/\s+/g, ' ').trim();
+            const correctStrategy = simulationData.step3.correctStrategy;
+            
+            if (userStrategy === correctStrategy) {
+                feedback.textContent = simulationData.step3.correctFeedback;
+                feedback.className = 'feedback correct';
+                userScore += 4; // Puntos por el paso 3
+            } else {
+                feedback.textContent = simulationData.step3.incorrectFeedback;
+                feedback.className = 'feedback incorrect';
+            }
+            
+            // Permitir continuar después de verificar
+            document.getElementById('next-step3').textContent = 'Siguiente';
+            document.getElementById('next-step3').onclick = () => navigateToStep(4);
+        }
+
+        function initializeStep4() {
+            const filtersContainer = document.getElementById('filters-container');
+            filtersContainer.innerHTML = '';
+            
+            simulationData.step4.filters.forEach((filter, index) => {
+                const filterElement = document.createElement('div');
+                filterElement.className = 'filter';
+                filterElement.textContent = filter.text;
+                filterElement.dataset.index = index;
+                filterElement.dataset.correct = filter.correct;
+                
+                filterElement.addEventListener('click', function() {
+                    this.classList.toggle('active');
+                    
+                    const index = userSelections.step4.indexOf(filter.text);
+                    if (index > -1) {
+                        userSelections.step4.splice(index, 1);
+                    } else {
+                        userSelections.step4.push(filter.text);
+                    }
+                    
+                    verifyStep4();
+                });
+                
+                filtersContainer.appendChild(filterElement);
+            });
+        }
+
+        function verifyStep4() {
+            const feedback = document.getElementById('step4-feedback');
+            const correctFilters = simulationData.step4.filters.filter(f => f.correct).map(f => f.text);
+            const userCorrect = userSelections.step4.filter(f => correctFilters.includes(f));
+            const userIncorrect = userSelections.step4.filter(f => !correctFilters.includes(f));
+            
+            if (userCorrect.length === correctFilters.length && userIncorrect.length === 0) {
+                feedback.textContent = simulationData.step4.correctFeedback;
+                feedback.className = 'feedback correct';
+                userScore += 2; // Puntos por el paso 4
+            } else if (userSelections.step4.length > 0) {
+                feedback.textContent = simulationData.step4.incorrectFeedback;
+                feedback.className = 'feedback incorrect';
+            } else {
+                feedback.className = 'feedback';
+            }
+        }
+
+        function showFinalResults() {
+            // Calcular puntuación final (añadir puntos por el paso 2)
+            const step2Correct = userSelections.step2.filter((selection, index) => {
+                return simulationData.step2.questions[index].options[selection].correct;
+            }).length;
+            
+            userScore += step2Correct; // 1 punto por cada respuesta correcta en el paso 2
+            
+            // Mostrar puntuación
+            document.getElementById('final-score').textContent = `Puntuación: ${userScore}/${maxScore}`;
+            
+            // Mostrar estrategia final
+            const finalSearch = document.getElementById('final-search');
+            finalSearch.style.display = 'block';
+            finalSearch.textContent = `
+('nonvalvular atrial fibrillation'/exp) AND
+(('dabigatran'/exp OR 'rivaroxaban'/exp OR 'apixaban'/exp) OR ('warfarin'/exp)) AND
+('cerebrovascular accident'/exp OR 'stroke'/exp)
+
++ Límites aplicados: ${userSelections.step4.join(', ')}
+            `.trim();
+            
+            // Mostrar feedback final
+            const finalFeedback = document.getElementById('final-feedback');
+            if (userScore >= 8) {
+                finalFeedback.textContent = "¡Felicidades! Has construido una estrategia de búsqueda muy completa y metodológicamente sólida. No olvides que en la vida real siempre debes probar tu estrategia, revisar los primeros 50-100 resultados para ajustar términos y utilizar la función de 'Explosion' en EMTREE para incluir términos más específicos automáticamente.";
+            } else if (userScore >= 5) {
+                finalFeedback.textContent = "Buen trabajo. Tu estrategia es adecuada pero tiene algunos aspectos que podrían mejorarse. Revisa los conceptos donde has tenido dificultades y practica más con esos elementos.";
+            } else {
+                finalFeedback.textContent = "Tu estrategia necesita mejoras. Te recomendamos repasar los conceptos básicos de búsqueda en Embase antes de intentar una búsqueda real. Presta especial atención a la identificación de conceptos clave y el uso de operadores booleanos.";
+            }
+        }
+
+        function restartSimulation() {
+            // Reiniciar variables
+            currentStep = 0;
+            userScore = 0;
+            userSelections.step1 = [];
+            userSelections.step2 = [];
+            userSelections.step3 = "";
+            userSelections.step4 = [];
+            
+            // Restablecer la interfaz
+            document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+            document.querySelector('.scenario').style.display = 'block';
+            document.querySelector('.progress-bar').style.display = 'none';
+            document.getElementById('progress').style.width = '0%';
+            
+            // Reinicializar el paso 1
+            initializeStep1();
+        }
+    </script>
+</body>
+</html>
